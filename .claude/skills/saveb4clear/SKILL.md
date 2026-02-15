@@ -165,7 +165,38 @@ Write or replace this section:
 
 If the session didn't advance the roadmap (e.g., pure bug fixes or tooling work), still update the breadcrumb to reflect the current position and note what was done instead.
 
-### Step 6: Confirm and wait
+### Step 6: Sync shared memory (if configured)
+
+If this project has a `dotfiles/MEMORY.md` file (shared Claude Code memory across machines), sync it to the remote so other machines and developers receive the latest lessons.
+
+1. **Check for dotfiles changes** to sync:
+   ```bash
+   git diff --name-only dotfiles/ 2>/dev/null
+   ```
+   If no dotfiles changed, skip to Step 7.
+
+2. **Pull latest** from remote (uses autostash to preserve uncommitted session work):
+   ```bash
+   git pull --rebase --autostash origin $(git branch --show-current)
+   ```
+   If merge conflicts occur in `dotfiles/MEMORY.md`, resolve by keeping both versions — append the incoming additions below the local ones.
+
+3. **Stage and commit only dotfiles** (do NOT stage history, ROADMAP, or other session files):
+   ```bash
+   git add dotfiles/MEMORY.md
+   git add dotfiles/global-settings.json 2>/dev/null
+   git diff --cached --quiet || git commit -m "auto: sync Claude Code memory"
+   ```
+
+4. **Push**:
+   ```bash
+   git push
+   ```
+   If push fails, warn the user but do not retry — the commit is saved locally and will sync next session.
+
+**Skip this step entirely** if `dotfiles/MEMORY.md` does not exist in the project root.
+
+### Step 7: Confirm and wait
 
 **After completing all steps**, confirm to the user:
 
@@ -176,6 +207,7 @@ Session documented:
 
 Bugs tracked: {count} (GitHub Issues created/closed + BUG_FIXES.md updated)
 Roadmap updated: {summary of changes, e.g., "Phase 1: 3/9 → 4/9 complete"}
+Memory synced: {pushed | no changes | skipped (no dotfiles/MEMORY.md) | push failed (committed locally)}
 Resume point: Phase {N}, Step {N.Y} — {next step description}
 
 Ready to clear. Run /clear when ready.
